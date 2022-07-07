@@ -3,11 +3,10 @@ import { ids } from './enums';
 export async function render(): Promise<void> {
     const baseURL  = 'https://api.themoviedb.org/3/';
     const APIKEY  = '1ea13be12fc8832818b31d5f22470b9c';
-    let baseImageURL : any = null;
+    let baseImageURL : string | null = null;
     let configData = null;
 
     let page = 1;
-
     const filmContainer = <HTMLDivElement>document.getElementById('film-container');
     const cardContainer = <HTMLDivElement>document.querySelector('.movie-card');
     const radiosDiv = <HTMLDivElement>document.getElementById('button-wrapper');
@@ -18,44 +17,80 @@ export async function render(): Promise<void> {
     const more = <HTMLButtonElement>document.getElementById('load-more');
     let svg = <NodeListOf<SVGSVGElement>>document.querySelectorAll('svg');
 
-    const getConfig = function () {
+    const identity = <T>(x: T): T => x;
+
+    async function getConfig () {
         const url = ''.concat(baseURL, 'configuration?api_key=', APIKEY);
-        fetch(url)
-            .then((result)=>{
-                return result.json();
-            })
-            .then((data)=>{
-                baseImageURL = data.images.secure_base_url.toString();
-                configData = data.images;
-                console.log('config:', data);
-                console.log('config fetched');
-                loadFilms('movie/popular?api_key=');
-                randomFilm();
-            })
-            .catch(function(err){
-                alert(err);
-            });
-    }
+        try{
+            const response = await fetch(url);
+            const data = await response.json();
+            baseImageURL = data.images.secure_base_url.toString();
+            configData = data.images;
+            console.log('config:', data);
+            console.log('config fetched');
+            await loadFilms('movie/popular?api_key=');
+            await randomFilm();
+        }
+        catch (e){
+            alert(e);
+        }
 
-    const loadFilms = function (link: string) {
+    }
+    // const getConfig = function () {
+    //     const url = ''.concat(baseURL, 'configuration?api_key=', APIKEY);
+    //     fetch(url)
+    //         .then((result)=>{
+    //             return result.json();
+    //         })
+    //         .then((data)=>{
+    //             baseImageURL = data.images.secure_base_url.toString();
+    //             configData = data.images;
+    //             console.log('config:', data);
+    //             console.log('config fetched');
+    //             loadFilms('movie/popular?api_key=');
+    //             randomFilm();
+    //         })
+    //         .catch(function(err){
+    //             alert(err);
+    //         });
+    // }
+
+    async function loadFilms (link: string) {
         const url = ''.concat(baseURL, link, APIKEY, '&language=en-US&page=', page.toString());
-        fetch(url)
-            .then(result=>result.json())
-            .then((data)=>{
-                console.log(data);
-                changePosters(data);
-            });
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(data);
+        changePosters(data);
     }
 
-    const randomFilm = function () {
+    // const loadFilms = function (link: string) {
+    //     const url = ''.concat(baseURL, link, APIKEY, '&language=en-US&page=', page.toString());
+    //     fetch(url)
+    //         .then(result=>result.json())
+    //         .then((data)=>{
+    //             console.log(data);
+    //             changePosters(data);
+    //         });
+    // }
+
+    async function randomFilm () {
         const random = Math.floor(Math.random() * 20);
         const url = ''.concat(baseURL, 'find/', random.toString(), '?api_key=', APIKEY, '&language=en-US&external_source=imdb_id');
-        fetch(url)
-            .then(result=>result.json())
-            .then((data)=>{
-                console.log(data);
-            });
+
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(data);
     }
+
+    // const randomFilm = function () {
+    //     const random = Math.floor(Math.random() * 20);
+    //     const url = ''.concat(baseURL, 'find/', random.toString(), '?api_key=', APIKEY, '&language=en-US&external_source=imdb_id');
+    //     fetch(url)
+    //         .then(result=>result.json())
+    //         .then((data)=>{
+    //             console.log(data);
+    //         });
+    // }
 
 
     more.addEventListener('click', function(){
@@ -133,11 +168,9 @@ export async function render(): Promise<void> {
                     date[i].innerHTML = data.results[index].release_date;
                     svg[i].setAttribute('id', data.results[index].id);
 
-                    if(localStorage.getItem(svg[i].getAttribute('id')) != null)
-                        svg[i].setAttribute('fill', 'red');
+                    const localSetItem: string | null = localStorage.getItem(svg[i].getAttribute('id'));
+                    (localSetItem != null) ? svg[i].setAttribute('fill', 'red') : svg[i].setAttribute('fill', '#ff000078');
 
-                    else
-                        svg[i].setAttribute('fill', '#ff000078');
                 }
             }
             index++;
@@ -148,10 +181,7 @@ export async function render(): Promise<void> {
         el.setAttribute('fill', '#ff000078');
         el.addEventListener('mousedown', function(){
             let id: string | null;
-            if(el.hasAttribute('id'))
-                id = el.getAttribute('id');
-            else
-                id = null;
+            (el.hasAttribute('id')) ? id = el.getAttribute('id') : id = null;
             el.setAttribute('fill', toggleFill(el.getAttribute('fill'), id))
         });
     }
@@ -180,5 +210,5 @@ export async function render(): Promise<void> {
         container.style.backgroundImage = `url(${baseImageURL}original${data.backdrop_path})`;
         container.style.backgroundSize = '100%';
     }
-    document.addEventListener('DOMContentLoaded', getConfig);
+    await document.addEventListener('DOMContentLoaded', getConfig);
 }
