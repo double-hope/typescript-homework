@@ -1,6 +1,24 @@
 import { ids } from './enums';
 import { APIKEY } from './api';
 
+const baseURL : string  = 'https://api.themoviedb.org/3/';
+let baseImageURL : string | null = null;
+
+let page = 1;
+const filmContainer = <HTMLDivElement>document.getElementById('film-container');
+const cardContainer = <HTMLDivElement>document.querySelector('.movie-card');
+const radiosDiv = <HTMLDivElement>document.getElementById('button-wrapper');
+let cards = filmContainer.querySelectorAll('.card');
+const cardsText = <HTMLCollectionOf<HTMLParagraphElement>>document.getElementsByClassName('card-text');
+const date = document.getElementsByClassName('text-muted');
+const submit = <HTMLButtonElement>document.getElementById('submit');
+const more = <HTMLButtonElement>document.getElementById('load-more');
+let svg = <NodeListOf<SVGSVGElement>>document.querySelectorAll('svg');
+const favourites = <HTMLDivElement>document.getElementById('favorite-movies');
+const favouritesContainer = <HTMLDivElement>favourites.querySelector('.favorite-movies');
+const favouriteCard = <HTMLDivElement>favouritesContainer.querySelector('.card');
+favouriteCard.remove();
+
 interface iMovie{
     id: number;
     poster_path: string;
@@ -11,27 +29,6 @@ interface iMovie{
 }
 
 export async function render(): Promise<void> {
-    const baseURL  = 'https://api.themoviedb.org/3/';
-    let baseImageURL : string | null = null;
-    let configData = null;
-
-    let page = 1;
-    const filmContainer = <HTMLDivElement>document.getElementById('film-container');
-    const cardContainer = <HTMLDivElement>document.querySelector('.movie-card');
-    const radiosDiv = <HTMLDivElement>document.getElementById('button-wrapper');
-    let cards = filmContainer.querySelectorAll('.card');
-    const cardsText = <HTMLCollectionOf<HTMLParagraphElement>>document.getElementsByClassName('card-text');
-    const date = document.getElementsByClassName('text-muted');
-    const submit = <HTMLButtonElement>document.getElementById('submit');
-    const more = <HTMLButtonElement>document.getElementById('load-more');
-    let svg = <NodeListOf<SVGSVGElement>>document.querySelectorAll('svg');
-    const favourites = <HTMLDivElement>document.getElementById('favorite-movies');
-    const favouritesContainer = <HTMLDivElement>favourites.querySelector('.favorite-movies');
-    const favouriteCard = <HTMLDivElement>favouritesContainer.querySelector('.card');
-
-    favouriteCard.remove();
-
-    const identity = <T>(x: T): T => x;
 
     async function getConfig () {
         const url = ''.concat(baseURL, 'configuration?api_key=', APIKEY);
@@ -39,7 +36,6 @@ export async function render(): Promise<void> {
             const response = await fetch(url);
             const data = await response.json();
             baseImageURL = data.images.secure_base_url.toString();
-            configData = data.images;
             console.log('config:', data);
             console.log('config fetched');
             await loadFilms('movie/popular?api_key=');
@@ -173,7 +169,7 @@ export async function render(): Promise<void> {
                     date[i].innerHTML = data[index].release_date;
                     svg[i].setAttribute('id', data[index].id.toString());
 
-                    const localSetItem: string | null = localStorage.getItem(svg[i].getAttribute('id'));
+                    const localSetItem: string | null = localStorage.getItem(data[index].id.toString());
                     if (localSetItem != null) {
                         svg[i].setAttribute('fill', 'red');
                         checkExists(data[index].id);
@@ -194,7 +190,7 @@ export async function render(): Promise<void> {
                 localStorage.setItem(id.toString(), id.toString());
                 addFavourites(id);
             }
-
+            // checkStorage(id);
             return 'red'
         }
         else{
@@ -202,6 +198,7 @@ export async function render(): Promise<void> {
                 localStorage.removeItem(id.toString());
                 deleteFavourites(id);
             }
+            // checkStorage(id);
 
             return '#ff000078'
         }
@@ -269,7 +266,9 @@ export async function render(): Promise<void> {
                     }
                 }
             }
+
         }
+
         addFavourites(id);
     }
 
